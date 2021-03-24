@@ -1,0 +1,26 @@
+First experiments to add https://www.apollographql.com/docs/federation/federation-spec/[GraphQL Federation] to https://github.com/smallrye/smallrye-graphql[SmallRye GraphQL].
+
+There are three node services in `src/main/ts`:
+
+* `content.ts`: a federated services delivering basic data about three films.
+* `review.ts`: a federated service delivering reviews for those films. This one is being replace with the Java demo app.
+* `gateway.ts`: a federating service merging the schemas of the other two.
+
+The `pom.xml` builds a `war` that can run on a WildFly (tested with 23.0.0), either when the graphql feature pack is installed, or when built with the `fat` profile, so it includes the SmallRye GraphQL dependencies.
+
+It contains the federation classes and a demo app delivering the reviews. An example query is:
+
+[source]
+----
+{
+  contents {
+    id
+    title
+    year
+    reviews {
+      score
+      comments
+    }
+  }
+}
+----

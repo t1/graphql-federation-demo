@@ -1,0 +1,9 @@
+type Content @key(fields: "id") {
+    id: ID!
+    title: String
+    year: String
+}
+
+type Query {
+    contents: [Content]
+}

@@ -4,7 +4,6 @@
   "description": "GraphQL Schema Federation Example: https://medium.com/swlh/graphql-schema-federation-with-apollo-typescript-and-node-js-7aa6b0ae06",
   "scripts": {
     "start-content-service": "ts-node content",
-    "start-review-service": "ts-node review",
     "start-gateway": "ts-node gateway"
   },
   "dependencies": {

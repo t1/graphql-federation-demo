@@ -1,17 +1,15 @@
 package graphql.demo.review;
 
+import graphql.federation.FederatedSource;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
-import org.eclipse.microprofile.graphql.Source;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static java.util.stream.Collectors.toList;
 
 @GraphQLApi
 public class Reviews {
@@ -27,10 +25,8 @@ public class Reviews {
         REVIEWS.computeIfAbsent(review.contentId, key -> new ArrayList<>()).add(review);
     }
 
-
-    /** This is a federated resolver that resolves the reviews for the externally provided content objects */
-    public @NonNull List<@NonNull Content> reviews(List<Content> contents) {
-        return contents.stream().map(content -> content.withReviews(reviews(content.getId()))).collect(toList());
+    public @NonNull List<@NonNull Review> reviews(@FederatedSource Content content) {
+        return reviews(content.getId());
     }
 
     @Query public @NonNull List<@NonNull Review> reviews(@NonNull @Id String contentId) { return REVIEWS.get(contentId); }

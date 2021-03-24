@@ -17,5 +17,6 @@ import java.util.List;
 @Getter @Setter @With @ToString @NoArgsConstructor @AllArgsConstructor
 public @Extends @Key(fields = "id") class Content {
     @External @NonNull @Id String id;
+    // TODO B: add this field from the return type of the federated resolver method
     @NonNull List<@NonNull Review> reviews;
 }

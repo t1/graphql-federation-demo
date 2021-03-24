@@ -4,6 +4,10 @@ import graphql.TypeResolutionEnvironment;
 import graphql.demo.review.Content;
 import graphql.demo.review.Reviews;
 import graphql.scalar.GraphqlStringCoercing;
+import graphql.schema.Coercing;
+import graphql.schema.CoercingParseLiteralException;
+import graphql.schema.CoercingParseValueException;
+import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
@@ -15,14 +19,17 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchema.Builder;
 import graphql.schema.GraphQLUnionType;
+import io.smallrye.graphql.schema.model.Schema;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.NonNull;
 import org.eclipse.microprofile.graphql.Query;
 
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import java.util.List;
+import java.util.Map;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
@@ -38,10 +45,28 @@ import static java.util.stream.Collectors.toList;
 @Log
 @GraphQLApi
 public class Federation {
-    private static final GraphQLScalarType _Any = GraphQLScalarType.newScalar().name("_Any")
-        .coercing(new GraphqlStringCoercing()).build();
     private static final GraphQLScalarType _FieldSet = GraphQLScalarType.newScalar().name("_FieldSet")
         .coercing(new GraphqlStringCoercing()).build();
+
+    private static final GraphQLScalarType _Any = GraphQLScalarType.newScalar().name("_Any")
+        .coercing(new AnyCoercing()).build();
+
+    private static class AnyCoercing implements Coercing<Object, Object> {
+        @Override public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+            return dataFetcherResult;
+        }
+
+        @Override public Object parseValue(Object input) throws CoercingParseValueException {
+            return input;
+        }
+
+        @Override public Object parseLiteral(Object input) throws CoercingParseLiteralException {
+            return input;
+        }
+    }
+
+
+    @Inject Schema schema;
 
     private GraphQLUnionType _Entity;
     private GraphQLFieldDefinition _entities;
@@ -149,32 +174,50 @@ public class Federation {
             "}\n");
     }
 
-    @Inject Reviews reviews;
-
     private GraphQLObjectType resolveEntity(TypeResolutionEnvironment environment) {
         var typeName = environment.getObject().getClass().getSimpleName(); // TODO B: type renames
         return environment.getSchema().getObjectType(typeName);
     }
 
-    private Object fetchEntities(DataFetchingEnvironment environment) {
+    private List<Object> fetchEntities(DataFetchingEnvironment environment) {
         @SuppressWarnings("unchecked")
-        var representations = (List<String>) environment.getArgument("representations");
+        var representations = (List<Map<String, Object>>) environment.getArgument("representations");
         var contentList = representations.stream()
-            .map(Federation::toExternalType)
+            .map(this::toRepresentationInstance)
             .collect(toList());
-        // TODO A: determine real resolver from request
         // TODO C: batch resolvers
         return contentList.stream()
-            .map(content -> content.withReviews(reviews.reviews(content)))
+            .map(this::resolve)
             .collect(toList());
     }
 
-    private static Content toExternalType(String any) {
-        // TODO A: determine real type and fields from request
-        assert any.startsWith("{__typename=Content, id=");
-        assert any.endsWith("}");
-        var id = any.substring(24, any.length() - 1);
-        return new Content().withId(id);
+    private Content resolve(Object target) {
+        var content = (Content) target;
+        // TODO A: determine real resolver from request
+        var reviews = CDI.current().select(Reviews.class).get();
+        return content.withReviews(reviews.reviews(content));
+    }
+
+    /** Create a prefilled instance of the type going into the federated resolver */
+    private Object toRepresentationInstance(Map<String, Object> any) {
+        var typename = (String) any.get("__typename");
+        try {
+            var type = schema.getTypes().get(typename);
+            var cls = Class.forName(type.getClassName());
+            Object instance = cls.getConstructor().newInstance();
+            // TODO B: be smarter about renames, etc.
+            for (String fieldName : type.getFields().keySet()) {
+                // TODO A: set only @external fields
+                if ("__typename".equals(fieldName)) continue;
+                var value = (String) any.get(fieldName);
+                var field = cls.getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(instance, value);
+            }
+            return instance;
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("can't create extended type instance " + typename, e);
+        }
     }
 
     // TODO A: register extended type dynamically

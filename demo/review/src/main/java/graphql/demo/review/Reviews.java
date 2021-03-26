@@ -18,18 +18,16 @@ public class Reviews {
     static {
         addReview(Review.builder().id("1").score("7.5").comment("Great movie").comment("First and unique!").filmId("1").build());
         addReview(Review.builder().id("2").score("7.0").comment("Amazing!").comment("Love this one!").filmId("2").build());
-        addReview(Review.builder().id("3").score("9.0").comment("Childhood memories!").comment("Really good!").filmId("3").build());
+        addReview(Review.builder().id("3").score("9.0").comment("Childhood memories!").comment("Really good!").filmId("2").build());
     }
 
-    private static void addReview(Review review) {
-        REVIEWS.computeIfAbsent(review.filmId, key -> new ArrayList<>()).add(review);
-    }
+    private static void addReview(Review review) { reviewsFor(review.filmId).add(review); }
 
-    public @NonNull List<@NonNull Review> reviews(@FederatedSource Film film) {
-        return reviews(film.getId());
-    }
+    private static List<Review> reviewsFor(@Id @NonNull String filmId) { return REVIEWS.computeIfAbsent(filmId, key -> new ArrayList<>()); }
 
-    @Query public @NonNull List<@NonNull Review> reviews(@NonNull @Id String filmId) { return REVIEWS.get(filmId); }
+    public @NonNull List<@NonNull Review> reviews(@FederatedSource Film film) { return getReviews(film.getId()); }
+
+    @Query public @NonNull List<@NonNull Review> getReviews(@NonNull @Id String filmId) { return reviewsFor(filmId); }
 
     // TODO A: register extended type dynamically
     @Query public Film dummyFilm() { return null; }

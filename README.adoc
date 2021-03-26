@@ -17,11 +17,14 @@ Start them with the `start-film-service` and `start-gateway` commands defined in
 
 The `pom.xml` builds a `war` that can run on a WildFly (tested with 23.0.0), either when the graphql feature pack is installed, or when built with the `fat` profile, so it includes the SmallRye GraphQL dependencies.
 
+[NOTE]
+The feature-pack currently contains a version of SmallRye GraphQL that has a bug that turns the `_Any` type into `_AnyInput`. So you'll have to use the `fat` deployment for now.
+
 It contains the federation classes and a demo app delivering reviews for the films.
 
 ==== Testing
 
-Open the gateway in http://localhost:4000
+Open the gateway playground at http://localhost:4000
 
 An example query is:
 

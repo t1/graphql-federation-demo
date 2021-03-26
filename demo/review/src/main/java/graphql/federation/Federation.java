@@ -2,6 +2,7 @@ package graphql.federation;
 
 import graphql.TypeResolutionEnvironment;
 import graphql.demo.review.Film;
+import graphql.demo.review.Review;
 import graphql.demo.review.Reviews;
 import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.Coercing;
@@ -34,6 +35,7 @@ import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
@@ -180,20 +182,19 @@ public class Federation {
     public List<Object> fetchEntities(DataFetchingEnvironment environment) {
         @SuppressWarnings("unchecked")
         var representations = (List<Map<String, Object>>) environment.getArgument("representations");
-        var filmList = representations.stream()
+        return representations.stream()
             .map(this::toRepresentationInstance)
-            .collect(toList());
-        // TODO C: batch resolvers
-        return filmList.stream()
             .map(this::resolve)
             .collect(toList());
     }
 
-    private Film resolve(Object target) {
-        var film = (Film) target;
+    private Object resolve(Object source) {
+        var film = (Film) source;
         // TODO A: determine real resolver from request
         var reviews = CDI.current().select(Reviews.class).get();
-        return film.withReviews(reviews.reviews(film));
+        // TODO C: batch resolvers
+        Function<Film, List<Review>> resolver = reviews::reviews;
+        return film.withReviews(resolver.apply(film));
     }
 
     /** Create a prefilled instance of the type going into the federated resolver */

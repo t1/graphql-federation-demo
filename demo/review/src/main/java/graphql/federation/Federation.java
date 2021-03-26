@@ -1,7 +1,7 @@
 package graphql.federation;
 
 import graphql.TypeResolutionEnvironment;
-import graphql.demo.review.Content;
+import graphql.demo.review.Film;
 import graphql.demo.review.Reviews;
 import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.Coercing;
@@ -58,7 +58,7 @@ public class Federation {
     private static final GraphQLScalarType _Any = GraphQLScalarType.newScalar().name("_Any")
         .coercing(new AnyCoercing()).build();
 
-    private static class AnyCoercing implements Coercing<Object, Object> {
+    public static class AnyCoercing implements Coercing<Object, Object> {
         @Override public Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
             return dataFetcherResult;
         }
@@ -142,7 +142,7 @@ public class Federation {
             .map(AnnotationTarget::asClass)
             .map(typeInfo -> toObjectType(typeInfo, builder))
             .toArray(GraphQLObjectType[]::new);
-        // union _Entity = Content
+        // union _Entity = Film
         _Entity = GraphQLUnionType.newUnionType().name("_Entity")
             .possibleTypes(typesWithKey)
             .description("This is a union of all types that use the @key directive, " +
@@ -172,28 +172,28 @@ public class Federation {
     }
 
 
-    private GraphQLObjectType resolveEntity(TypeResolutionEnvironment environment) {
+    public GraphQLObjectType resolveEntity(TypeResolutionEnvironment environment) {
         var typeName = environment.getObject().getClass().getSimpleName(); // TODO B: type renames
         return environment.getSchema().getObjectType(typeName);
     }
 
-    private List<Object> fetchEntities(DataFetchingEnvironment environment) {
+    public List<Object> fetchEntities(DataFetchingEnvironment environment) {
         @SuppressWarnings("unchecked")
         var representations = (List<Map<String, Object>>) environment.getArgument("representations");
-        var contentList = representations.stream()
+        var filmList = representations.stream()
             .map(this::toRepresentationInstance)
             .collect(toList());
         // TODO C: batch resolvers
-        return contentList.stream()
+        return filmList.stream()
             .map(this::resolve)
             .collect(toList());
     }
 
-    private Content resolve(Object target) {
-        var content = (Content) target;
+    private Film resolve(Object target) {
+        var film = (Film) target;
         // TODO A: determine real resolver from request
         var reviews = CDI.current().select(Reviews.class).get();
-        return content.withReviews(reviews.reviews(content));
+        return film.withReviews(reviews.reviews(film));
     }
 
     /** Create a prefilled instance of the type going into the federated resolver */
@@ -225,22 +225,19 @@ public class Federation {
         return new _Service("\n" +
             "\"Query root\"\n" +
             "type Query {\n" +
-            "  ratings(contentId: String!): [Review!]!\n" +
+            "  ratings(filmId: String!): [Review!]!\n" +
             "}\n" +
             "\n" +
             "type Review @key(fields: \"id\") {\n" +
             "    id: ID!\n" +
-            "    contentId: ID!\n" +
+            "    filmId: ID!\n" +
             "    score: String!\n" +
             "    comments: [String!]!\n" +
             "}\n" +
             "\n" +
-            "type Content @key(fields: \"id\") @extends {\n" +
+            "type Film @key(fields: \"id\") @extends {\n" +
             "    id: ID! @external\n" +
             "    reviews: [Review!]!\n" +
             "}\n");
     }
-
-    // TODO A: register extended type dynamically
-    @Query public Content dummyContent() { return null; }
 }

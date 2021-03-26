@@ -15,7 +15,7 @@ import org.eclipse.microprofile.graphql.NonNull;
 import java.util.List;
 
 @Getter @Setter @With @ToString @NoArgsConstructor @AllArgsConstructor
-public @Extends @Key(fields = "id") class Content {
+public @Extends @Key(fields = "id") class Film {
     @External @NonNull @Id String id;
     // TODO B: add this field from the return type of the federated resolver method
     @NonNull List<@NonNull Review> reviews;

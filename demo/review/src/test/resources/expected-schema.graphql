@@ -38,9 +38,9 @@ directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
 directive @extends on OBJECT | INTERFACE
 
 "This is a union of all types that use the @key directive, including both types native to the schema and extended types."
-union _Entity = Content
+union _Entity = Film
 
-type Content @key(fields: "id") @extends {
+type Film @key(fields: "id") @extends {
     id: ID! @external
     reviews: [Review!]!
 }
@@ -49,12 +49,12 @@ type Content @key(fields: "id") @extends {
 type Query {
     _entities(representations: [_Any!]!): [_Entity]!
     _service: _Service!
-    reviews(contentId: ID!): [Review!]!
+    reviews(filmId: ID!): [Review!]!
 }
 
 type Review {
     comments: [String!]!
-    contentId: ID!
+    filmId: ID!
     id: ID!
     score: String!
 }

@@ -16,7 +16,7 @@ import java.util.List;
 @Builder @AllArgsConstructor
 public class Review {
     @NonNull @Id String id;
-    @NonNull @Id String contentId;
+    @NonNull @Id String filmId;
     @NonNull String score;
     @Singular @NonNull List<@NonNull String> comments;
 }

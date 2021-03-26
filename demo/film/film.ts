@@ -1,7 +1,7 @@
 import { ApolloServer, gql } from "apollo-server";
 import { buildFederatedSchema } from "@apollo/federation";
 
-const contents = [
+const films = [
     { id: "1", title: "Batman", year: "1989" },
     { id: "2", title: "Batman Returns", year: "1992" },
     { id: "3", title: "Batman: The Animated Series", year: "1992" },
@@ -9,9 +9,9 @@ const contents = [
 
 const typeDefs = gql`
     type Query {
-        contents: [Content]
+        films: [Film]
     }
-    type Content @key(fields: "id") {
+    type Film @key(fields: "id") {
         id: ID!
         title: String
         year: String
@@ -20,13 +20,13 @@ const typeDefs = gql`
 
 const resolvers = {
     Query: {
-        contents() {
-            return contents;
+        films() {
+            return films;
         },
     },
-    Content: {
-        __resolveReference(content) {
-            return contents.find(c => c.id === content.id);
+    Film: {
+        __resolveReference(film) {
+            return films.find(c => c.id === film.id);
         },
     },
 };
@@ -36,5 +36,5 @@ const server = new ApolloServer({
 });
 
 server.listen(4001).then(({ url }) => {
-    console.log(`🚀 Content service ready at ${url}`);
+    console.log(`🚀 Film service ready at ${url}`);
 });

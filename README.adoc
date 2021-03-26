@@ -8,10 +8,10 @@ First experiments to add https://www.apollographql.com/docs/federation/federatio
 
 There are two node services in `src/main/ts`:
 
-* `content.ts`: a federated services delivering basic data about three films.
+* `film.ts`: a federated services delivering basic data about three films.
 * `gateway.ts`: a federating service merging the schemas of the other two.
 
-Start them with the `start-content-service` and `start-gateway` commands defined in the `package.json`
+Start them with the `start-film-service` and `start-gateway` commands defined in the `package.json`
 
 ==== Java
 
@@ -28,7 +28,7 @@ An example query is:
 [source]
 ----
 {
-  contents {
+  films {
     id
     title
     year

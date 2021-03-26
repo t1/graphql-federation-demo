@@ -1,0 +1,16 @@
+"Query root"
+type Query {
+    ratings(filmId: String!): [Review!]!
+}
+
+type Review @key(fields: "id") {
+    id: ID!
+    filmId: ID!
+    score: String!
+    comments: [String!]!
+}
+
+type Film @key(fields: "id") @extends {
+    id: ID! @external
+    reviews: [Review!]!
+}

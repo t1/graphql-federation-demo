@@ -11,7 +11,7 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>graphql-federation-demo-review</artifactId>
+    <artifactId>graphql-federation-demo-film</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -27,7 +27,7 @@
     </dependencies>
 
     <build>
-        <finalName>review</finalName>
+        <finalName>film</finalName>
         <defaultGoal>verify</defaultGoal>
     </build>
 </project>

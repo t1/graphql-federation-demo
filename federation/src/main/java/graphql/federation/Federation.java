@@ -26,11 +26,21 @@ import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
+import org.jboss.jandex.MethodInfo;
+import org.jboss.jandex.MethodParameterInfo;
+import org.jboss.jandex.Type;
 
+import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
+import javax.enterprise.inject.spi.CDI;
 import javax.inject.Inject;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
+import java.util.function.Function;
 
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
@@ -46,8 +56,10 @@ import static java.util.stream.Collectors.toList;
  */
 @Log
 @GraphQLApi
+@ApplicationScoped
 public class Federation {
     private static final DotName KEY = DotName.createSimple(Key.class.getName());
+    private static final DotName FEDERATED_SOURCE = DotName.createSimple(FederatedSource.class.getName());
 
     private static final GraphQLScalarType _FieldSet = GraphQLScalarType.newScalar().name("_FieldSet")
         .coercing(new GraphqlStringCoercing()).build();
@@ -77,6 +89,8 @@ public class Federation {
     private GraphQLObjectType.Builder query;
     private GraphQLCodeRegistry.Builder codeRegistry;
 
+    private final Map<Class<?>, Function<Object, Object>> federatedResolvers = new LinkedHashMap<>();
+
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
         // TODO C: make the query builder available from SmallRye
         this.query = GraphQLObjectType.newObject(builder.build().getQueryType());
@@ -88,6 +102,7 @@ public class Federation {
         addUnions(builder);
         addQueries();
         addCode();
+        addFederatedResolvers();
 
         builder.query(query);
         builder.codeRegistry(codeRegistry.build());
@@ -184,7 +199,7 @@ public class Federation {
     }
 
     private Object resolve(Object source) {
-        throw new RuntimeException();
+        return federatedResolvers.get(source.getClass()).apply(source);
     }
 
     /** Create a prefilled instance of the type going into the federated resolver */
@@ -211,17 +226,80 @@ public class Federation {
         }
     }
 
+    private void addFederatedResolvers() {
+        ScanningContext.getIndex()
+            .getAnnotations(FEDERATED_SOURCE).stream()
+            .map(AnnotationInstance::target)
+            .map(AnnotationTarget::asMethodParameter)
+            .map(MethodParameterInfo::method)
+            .map(Federation::toReflectionMethod)
+            .forEach(method -> federatedResolvers.put(method.getParameterTypes()[0], new ResolverHandler(method)));
+    }
+
+    private static Method toReflectionMethod(MethodInfo methodInfo) {
+        try {
+            var declaringClass = Class.forName(methodInfo.declaringClass().name().toString());
+            var parameterTypes = methodInfo.parameters().stream()
+                .map(Type::asClassType)
+                .map(Type::name)
+                .map(DotName::toString)
+                .map(Federation::toClass)
+                .toArray(Class[]::new);
+            return declaringClass.getDeclaredMethod(methodInfo.name(), parameterTypes);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("can't find reflection method for " + methodInfo, e);
+        }
+    }
+
+    private static Class<?> toClass(String className) {
+        try {
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("class not found: " + className, e);
+        }
+    }
+
+    public static class ResolverHandler implements Function<Object, Object> {
+        private final Method method;
+
+        private ResolverHandler(Method method) { this.method = method; }
+
+        @Override public Object apply(Object source) {
+            // TODO C: batch resolvers
+            Object value = invoke(source);
+            set(source, value);
+            return source;
+        }
+
+        private Object invoke(Object source) {
+            var reviews = CDI.current().select(method.getDeclaringClass()).get();
+            try {
+                return method.invoke(reviews, source);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
+            }
+        }
+
+        private void set(Object source, Object value) {
+            var fieldName = method.getName(); // TODO C: consider renames
+            try {
+                var field = source.getClass().getDeclaredField(fieldName);
+                field.setAccessible(true);
+                field.set(source, value);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("setting of federated resolver field failed: " + fieldName, e);
+            }
+        }
+    }
+
+
     @Query public @NonNull _Service _service() {
         // TODO A: derive real schema
-        return new _Service("" +
-            "type Film @key(fields: \"id\") {\n" +
-            "    id: ID!\n" +
-            "    title: String\n" +
-            "    year: String\n" +
-            "}\n" +
-            "\n" +
-            "type Query {\n" +
-            "    films: [Film]\n" +
-            "}\n");
+        try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
+            var sdl = new Scanner(stream).useDelimiter("\\Z").next();
+            return new _Service(sdl);
+        } catch (IOException e) {
+            throw new RuntimeException("could not load _service.graphql", e);
+        }
     }
 }

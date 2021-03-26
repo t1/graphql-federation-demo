@@ -1,0 +1,9 @@
+type Film @key(fields: "id") {
+    id: ID!
+    title: String
+    year: String
+}
+
+type Query {
+    films: [Film]
+}

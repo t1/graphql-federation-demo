@@ -1,7 +1,9 @@
 package graphql.federation;
 
 import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
 
+import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
@@ -10,5 +12,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * and it adds those fields that are not annotated as {@link graphql.federation.External @external}.
  */
 @Retention(RUNTIME)
+@Target(PARAMETER)
 public @interface FederatedSource {
 }

@@ -27,8 +27,21 @@
     </properties>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
         <defaultGoal>install</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>power-jandex-maven-plugin</artifactId>
+                <version>${smallrye-graphql.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>power-jandex</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <dependencies>

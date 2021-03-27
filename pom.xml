@@ -11,8 +11,7 @@
 
     <modules>
         <module>federation</module>
-        <module>demo/film</module>
-        <module>demo/review</module>
+        <module>demo</module>
     </modules>
 
     <properties>
@@ -20,7 +19,6 @@
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
-        <failOnMissingWebXml>false</failOnMissingWebXml>
 
         <smallrye-graphql.version>1.1.2</smallrye-graphql.version>
         <microprofile-graphql.version>1.0.3</microprofile-graphql.version>
@@ -28,20 +26,6 @@
 
     <build>
         <defaultGoal>install</defaultGoal>
-        <plugins>
-            <plugin>
-                <groupId>io.smallrye</groupId>
-                <artifactId>power-jandex-maven-plugin</artifactId>
-                <version>${smallrye-graphql.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>power-jandex</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 
     <dependencies>
@@ -69,36 +53,5 @@
             <version>${smallrye-graphql.version}</version>
             <scope>provided</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.smallrye</groupId>
-            <artifactId>smallrye-graphql-ui-graphiql</artifactId>
-            <version>${smallrye-graphql.version}</version>
-        </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>fat</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.eclipse.microprofile.graphql</groupId>
-                    <artifactId>microprofile-graphql-api</artifactId>
-                    <version>${microprofile-graphql.version}</version>
-                    <!-- not provided -->
-                </dependency>
-                <dependency>
-                    <groupId>io.smallrye</groupId>
-                    <artifactId>smallrye-graphql-servlet</artifactId>
-                    <version>${smallrye-graphql.version}</version>
-                    <!-- not provided -->
-                </dependency>
-                <dependency>
-                    <groupId>io.smallrye</groupId>
-                    <artifactId>smallrye-context-propagation</artifactId>
-                    <version>1.1.0</version>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 </project>

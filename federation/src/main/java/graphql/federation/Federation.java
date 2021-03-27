@@ -17,6 +17,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchema.Builder;
 import graphql.schema.GraphQLUnionType;
 import io.smallrye.graphql.schema.ScanningContext;
+import io.smallrye.graphql.schema.model.Operation;
 import io.smallrye.graphql.schema.model.Schema;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.graphql.GraphQLApi;
@@ -86,12 +87,20 @@ public class Federation {
 
     private GraphQLUnionType _Entity;
     private GraphQLFieldDefinition _entities;
+    private String _service;
     private GraphQLObjectType.Builder query;
     private GraphQLCodeRegistry.Builder codeRegistry;
 
     private final Map<Class<?>, Function<Object, Object>> federatedResolvers = new LinkedHashMap<>();
 
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
+        // TODO A: derive real schema
+        try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
+            _service = new Scanner(stream).useDelimiter("\\Z").next();
+        } catch (IOException e) {
+            throw new RuntimeException("could not load _service.graphql", e);
+        }
+
         // TODO C: make the query builder available from SmallRye
         this.query = GraphQLObjectType.newObject(builder.build().getQueryType());
         // TODO C: make the GraphQLCodeRegistry available from SmallRye
@@ -210,7 +219,7 @@ public class Federation {
             if (type == null) throw new IllegalStateException("no class registered in schema for " + typeName);
             var cls = Class.forName(type.getClassName());
             Object instance = cls.getConstructor().newInstance();
-            // TODO B: be smarter about renames, etc.
+            // TODO B: field renames
             for (String fieldName : type.getFields().keySet()) {
                 if ("__typename".equals(fieldName)) continue;
                 var value = (String) any.get(fieldName);
@@ -281,7 +290,7 @@ public class Federation {
         }
 
         private void set(Object source, Object value) {
-            var fieldName = method.getName(); // TODO C: consider renames
+            var fieldName = method.getName(); // TODO B: method renames
             try {
                 var field = source.getClass().getDeclaredField(fieldName);
                 field.setAccessible(true);
@@ -293,13 +302,5 @@ public class Federation {
     }
 
 
-    @Query public @NonNull _Service _service() {
-        // TODO A: derive real schema
-        try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
-            var sdl = new Scanner(stream).useDelimiter("\\Z").next();
-            return new _Service(sdl);
-        } catch (IOException e) {
-            throw new RuntimeException("could not load _service.graphql", e);
-        }
-    }
+    @Query public @NonNull _Service _service() { return new _Service(_service); }
 }

@@ -6,9 +6,9 @@
 
     <parent>
         <groupId>org.example</groupId>
-        <artifactId>graphql-federation-java-experiment</artifactId>
+        <artifactId>graphql-federation-java-experiment-demo</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>graphql-federation-demo-review</artifactId>
@@ -29,5 +29,15 @@
     <build>
         <finalName>review</finalName>
         <defaultGoal>verify</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>power-jandex-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>smallrye-graphql-maven-plugin</artifactId>
+                <groupId>io.smallrye</groupId>
+            </plugin>
+        </plugins>
     </build>
 </project>

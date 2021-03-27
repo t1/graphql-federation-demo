@@ -4,6 +4,8 @@ type Film @key(fields: "id") {
     year: String
 }
 
+"Query root"
 type Query {
+    film(id: String): Film
     films: [Film]
 }

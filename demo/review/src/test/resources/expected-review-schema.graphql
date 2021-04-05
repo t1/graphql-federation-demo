@@ -10,6 +10,21 @@ directive @skip(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
+"The @provides directive is used to annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway."
+directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+
+"Some libraries such as graphql-java don't have native support for type extensions in their printer. Apollo Federation supports using an @extends directive in place of extend type to annotate type references."
+directive @extends on OBJECT | INTERFACE
+
+"The @key directive is used to indicate a combination of fields that can be used to uniquely identify and fetch an object or interface."
+directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
+
+"The @requires directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services."
+directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+
+"The @external directive is used to mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field."
+directive @external on FIELD_DEFINITION
+
 "Marks the field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
@@ -22,25 +37,10 @@ directive @specifiedBy(
     url: String!
   ) on SCALAR
 
-"The @external directive is used to mark a field as owned by another service. This allows service A to use fields from service B while also knowing at runtime the types of that field."
-directive @external on FIELD_DEFINITION
-
-"The @key directive is used to indicate a combination of fields that can be used to uniquely identify and fetch an object or interface."
-directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
-
-"The @provides directive is used to annotate the expected returned fieldset from a field on a base type that is guaranteed to be selectable by the gateway."
-directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
-
-"The @requires directive is used to annotate the required input fieldset from a base type for a resolver. It is used to develop a query plan where the required fields may not be needed by the client, but the service may need additional information from other services."
-directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
-
-"Some libraries such as graphql-java don't have native support for type extensions in their printer. Apollo Federation supports using an @extends directive in place of extend type to annotate type references."
-directive @extends on OBJECT | INTERFACE
-
 "This is a union of all types that use the @key directive, including both types native to the schema and extended types."
 union _Entity = Film
 
-type Film @key(fields: "id") @extends {
+type Film @extends @key(fields: "id") {
     id: ID! @external
     reviews: [Review!]!
 }

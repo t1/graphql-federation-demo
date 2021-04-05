@@ -1,4 +1,4 @@
-package graphql.demo.review;
+package graphql.demo.film;
 
 import graphql.federation.Key;
 import lombok.AllArgsConstructor;

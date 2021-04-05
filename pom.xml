@@ -20,12 +20,40 @@
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
 
-        <smallrye-graphql.version>1.1.2</smallrye-graphql.version>
+        <smallrye-graphql.version>1.2.0-SNAPSHOT</smallrye-graphql.version>
         <microprofile-graphql.version>1.0.3</microprofile-graphql.version>
     </properties>
 
     <build>
         <defaultGoal>install</defaultGoal>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>io.smallrye</groupId>
+                    <artifactId>power-jandex-maven-plugin</artifactId>
+                    <version>${smallrye-graphql.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>power-jandex</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>smallrye-graphql-maven-plugin</artifactId>
+                    <groupId>io.smallrye</groupId>
+                    <version>${smallrye-graphql.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>generate-schema</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 
     <dependencies>

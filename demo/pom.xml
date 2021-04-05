@@ -30,37 +30,6 @@
         </dependency>
     </dependencies>
 
-    <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>io.smallrye</groupId>
-                    <artifactId>power-jandex-maven-plugin</artifactId>
-                    <version>${smallrye-graphql.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>power-jandex</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <artifactId>smallrye-graphql-maven-plugin</artifactId>
-                    <groupId>io.smallrye</groupId>
-                    <version>${smallrye-graphql.version}</version>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>generate-schema</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-    </build>
-
     <profiles>
         <profile>
             <id>fat</id>

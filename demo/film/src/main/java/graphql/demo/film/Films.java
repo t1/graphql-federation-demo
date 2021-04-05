@@ -1,4 +1,4 @@
-package graphql.demo.review;
+package graphql.demo.film;
 
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.NonNull;

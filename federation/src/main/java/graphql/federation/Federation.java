@@ -9,15 +9,15 @@ import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCodeRegistry;
-import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchema.Builder;
 import graphql.schema.GraphQLUnionType;
+import io.smallrye.graphql.bootstrap.Config;
+import io.smallrye.graphql.execution.SchemaPrinter;
 import io.smallrye.graphql.schema.ScanningContext;
-import io.smallrye.graphql.schema.model.Operation;
 import io.smallrye.graphql.schema.model.Schema;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.graphql.GraphQLApi;
@@ -43,9 +43,6 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.function.Function;
 
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
-import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLList.list;
@@ -61,6 +58,9 @@ import static java.util.stream.Collectors.toList;
 public class Federation {
     private static final DotName KEY = DotName.createSimple(Key.class.getName());
     private static final DotName FEDERATED_SOURCE = DotName.createSimple(FederatedSource.class.getName());
+
+    private static final Config PRINTER_CONFIG = new Config() {
+    };
 
     private static final GraphQLScalarType _FieldSet = GraphQLScalarType.newScalar().name("_FieldSet")
         .coercing(new GraphqlStringCoercing()).build();
@@ -94,12 +94,7 @@ public class Federation {
     private final Map<Class<?>, Function<Object, Object>> federatedResolvers = new LinkedHashMap<>();
 
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
-        // TODO A: derive real schema
-        try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
-            _service = new Scanner(stream).useDelimiter("\\Z").next();
-        } catch (IOException e) {
-            throw new RuntimeException("could not load _service.graphql", e);
-        }
+        _service = _service(builder.build());
 
         // TODO C: make the query builder available from SmallRye
         this.query = GraphQLObjectType.newObject(builder.build().getQueryType());
@@ -107,7 +102,6 @@ public class Federation {
         this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(builder.build().getCodeRegistry());
 
         addScalars(builder);
-        addDirectives(builder);
         addUnions(builder);
         addQueries();
         addCode();
@@ -118,42 +112,20 @@ public class Federation {
         return builder;
     }
 
+    private String _service(GraphQLSchema schema) {
+        // TODO A: derive real schema
+        if (schema == null) // disabled
+            return new SchemaPrinter(PRINTER_CONFIG).print(schema);
+        try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
+            return new Scanner(stream).useDelimiter("\\Z").next();
+        } catch (IOException e) {
+            throw new RuntimeException("could not load _service.graphql", e);
+        }
+    }
+
     private void addScalars(Builder builder) {
         builder.additionalType(_Any);
         builder.additionalType(_FieldSet);
-    }
-
-    private void addDirectives(GraphQLSchema.Builder builder) {
-        // TODO C: custom directives
-        // directive @external on FIELD_DEFINITION
-        builder.additionalDirective(GraphQLDirective.newDirective().name("external").validLocation(FIELD_DEFINITION)
-            .description("The @external directive is used to mark a field as owned by another service. " +
-                "This allows service A to use fields from service B while also knowing at runtime the types of that field.")
-            .build());
-        // directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
-        builder.additionalDirective(GraphQLDirective.newDirective().name("key").validLocations(OBJECT, INTERFACE)
-            .argument(newArgument().name("fields").type(nonNull(_FieldSet)))
-            .description("The @key directive is used to indicate a combination of fields that can be used to uniquely identify " +
-                "and fetch an object or interface.")
-            .build());
-        // directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
-        builder.additionalDirective(GraphQLDirective.newDirective().name("provides").validLocations(FIELD_DEFINITION)
-            .argument(newArgument().name("fields").type(nonNull(_FieldSet)))
-            .description("The @provides directive is used to annotate the expected returned fieldset from a field on a base type " +
-                "that is guaranteed to be selectable by the gateway.")
-            .build());
-        // directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
-        builder.additionalDirective(GraphQLDirective.newDirective().name("requires").validLocations(FIELD_DEFINITION)
-            .argument(newArgument().name("fields").type(nonNull(_FieldSet)))
-            .description("The @requires directive is used to annotate the required input fieldset from a base type for a resolver. " +
-                "It is used to develop a query plan where the required fields may not be needed by the client, " +
-                "but the service may need additional information from other services.")
-            .build());
-        // directive @extends on OBJECT | INTERFACE
-        builder.additionalDirective(GraphQLDirective.newDirective().name("extends").validLocations(OBJECT, INTERFACE)
-            .description("Some libraries such as graphql-java don't have native support for type extensions in their printer. " +
-                "Apollo Federation supports using an @extends directive in place of extend type to annotate type references.")
-            .build());
     }
 
     private void addUnions(Builder builder) {
@@ -163,7 +135,7 @@ public class Federation {
             .map(AnnotationTarget::asClass)
             .map(typeInfo -> toObjectType(typeInfo, builder))
             .toArray(GraphQLObjectType[]::new);
-        // union _Entity = Film
+        // union _Entity = ...
         _Entity = GraphQLUnionType.newUnionType().name("_Entity")
             .possibleTypes(typesWithKey)
             .description("This is a union of all types that use the @key directive, " +

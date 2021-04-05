@@ -12,4 +12,13 @@
     </parent>
 
     <artifactId>graphql-federation</artifactId>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>io.smallrye</groupId>
+                <artifactId>power-jandex-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

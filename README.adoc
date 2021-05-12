@@ -1,26 +1,21 @@
 === What's This?
 
-First experiments to add https://www.apollographql.com/docs/federation/federation-spec/[GraphQL Federation] to https://github.com/smallrye/smallrye-graphql[SmallRye GraphQL].
+Experimental extension library to add https://www.apollographql.com/docs/federation/federation-spec/[GraphQL Federation] to https://github.com/smallrye/smallrye-graphql[SmallRye GraphQL].
 
-=== Howto Run
+=== Howto Run The Demo
 
-==== Node
+==== Backend Services: Java
 
-There are two node services in `src/main/ts`:
-
-* `film.ts`: a federated services delivering basic data about three films.
-* `gateway.ts`: a federating service merging the schemas of the other two.
-
-Start them with the `start-film-service` and `start-gateway` commands defined in the `package.json`
-
-==== Java
-
-The `pom.xml` builds a `war` that can run on a WildFly (tested with 23.0.0), either when the graphql feature pack is installed, or when built with the `fat` profile, so it includes the SmallRye GraphQL dependencies.
+The `film` and `review` services build a `war` that can run on a JEE server (tested with WildFly 23.0.1), either when the GraphQL feature pack is installed, or when built with the `fat` profile, so it includes the SmallRye GraphQL dependencies.
 
 [NOTE]
 The feature-pack currently contains a version of SmallRye GraphQL that has a bug that turns the `_Any` type into `_AnyInput`. So you'll have to use the `fat` deployment for now.
 
 It contains the federation classes and a demo app delivering reviews for the films.
+
+==== Gateway Service: Node
+
+The federating `gateway` is a node service. Start it with the `start-gateway` commands defined in the `package.json`
 
 ==== Testing
 
@@ -42,3 +37,12 @@ An example query is:
   }
 }
 ----
+
+== GraphQL Tools
+
+https://gqless.com Client Generator
+
+https://graphql-hive.com Schema Registry + API Gateway
+
+https://www.prisma.io expose PostgreSQL, etc. as GraphQL
+similar: mesh

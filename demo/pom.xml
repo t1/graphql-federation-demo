@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.example</groupId>
-        <artifactId>graphql-federation-java-experiment</artifactId>
+        <groupId>com.github.t1</groupId>
+        <artifactId>graphql-federation-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>graphql-federation-java-experiment-demo</artifactId>
+    <artifactId>graphql-federation-demo</artifactId>
     <packaging>pom</packaging>
 
     <modules>

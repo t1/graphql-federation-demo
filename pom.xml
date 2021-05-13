@@ -20,8 +20,8 @@
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
 
-        <smallrye-graphql.version>1.2.0-SNAPSHOT</smallrye-graphql.version>
-        <microprofile-graphql.version>1.0.3</microprofile-graphql.version>
+        <smallrye-graphql.version>1.2.0</smallrye-graphql.version>
+        <microprofile-graphql.version>1.0.4-RC1</microprofile-graphql.version>
     </properties>
 
     <build>
@@ -60,7 +60,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.18</version>
+            <version>1.18.20</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

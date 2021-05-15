@@ -1,4 +1,4 @@
-package graphql.federation;
+package com.github.t1.graphql.federation.api;
 
 import io.smallrye.graphql.api.Directive;
 import org.eclipse.microprofile.graphql.Description;

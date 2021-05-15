@@ -1,8 +1,8 @@
 package graphql.demo.review;
 
-import graphql.federation.Extends;
-import graphql.federation.External;
-import graphql.federation.Key;
+import com.github.t1.graphql.federation.api.Extends;
+import com.github.t1.graphql.federation.api.External;
+import com.github.t1.graphql.federation.api.Key;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

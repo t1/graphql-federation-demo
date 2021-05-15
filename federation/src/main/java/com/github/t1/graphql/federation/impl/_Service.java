@@ -1,4 +1,4 @@
-package graphql.federation;
+package com.github.t1.graphql.federation.impl;
 
 import org.eclipse.microprofile.graphql.Description;
 import org.eclipse.microprofile.graphql.NonNull;

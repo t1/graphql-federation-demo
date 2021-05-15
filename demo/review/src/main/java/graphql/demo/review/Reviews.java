@@ -1,6 +1,6 @@
 package graphql.demo.review;
 
-import graphql.federation.FederatedSource;
+import com.github.t1.graphql.federation.api.FederatedSource;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.NonNull;
@@ -25,6 +25,7 @@ public class Reviews {
 
     private static List<Review> reviewsFor(@Id @NonNull String filmId) { return REVIEWS.computeIfAbsent(filmId, key -> new ArrayList<>()); }
 
+    @SuppressWarnings("unused")
     public @NonNull List<@NonNull Review> reviews(@FederatedSource Film film) { return getReviews(film.getId()); }
 
     @Query public @NonNull List<@NonNull Review> getReviews(@NonNull @Id String filmId) { return reviewsFor(filmId); }

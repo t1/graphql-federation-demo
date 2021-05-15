@@ -1,5 +1,8 @@
-package graphql.federation;
+package com.github.t1.graphql.federation.impl;
 
+import com.github.t1.graphql.federation.api.External;
+import com.github.t1.graphql.federation.api.FederatedSource;
+import com.github.t1.graphql.federation.api.Key;
 import graphql.TypeResolutionEnvironment;
 import graphql.scalar.GraphqlStringCoercing;
 import graphql.schema.Coercing;
@@ -117,6 +120,7 @@ public class Federation {
         if (schema == null) // disabled
             return new SchemaPrinter(PRINTER_CONFIG).print(schema);
         try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
+            if (stream == null) throw new RuntimeException("resource not found: `/_service.graphql`");
             return new Scanner(stream).useDelimiter("\\Z").next();
         } catch (IOException e) {
             throw new RuntimeException("could not load _service.graphql", e);
@@ -135,6 +139,7 @@ public class Federation {
             .map(AnnotationTarget::asClass)
             .map(typeInfo -> toObjectType(typeInfo, builder))
             .toArray(GraphQLObjectType[]::new);
+        if (typesWithKey.length == 0) return;
         // union _Entity = ...
         _Entity = GraphQLUnionType.newUnionType().name("_Entity")
             .possibleTypes(typesWithKey)

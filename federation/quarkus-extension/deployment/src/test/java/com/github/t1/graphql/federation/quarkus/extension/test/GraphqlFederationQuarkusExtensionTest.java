@@ -16,7 +16,7 @@ public class GraphqlFederationQuarkusExtensionTest {
         .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class));
 
     @Test
-    public void writeYourOwnUnitTest() {
+    public void shouldReturnExtensionGreeting() {
         when()
             .get("/greeting")
             .then()

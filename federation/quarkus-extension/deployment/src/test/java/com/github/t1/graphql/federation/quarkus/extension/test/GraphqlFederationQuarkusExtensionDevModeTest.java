@@ -19,7 +19,7 @@ public class GraphqlFederationQuarkusExtensionDevModeTest {
         .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class));
 
     @Test
-    public void writeYourOwnDevModeTest() {
+    public void shouldReturnExtensionGreeting() {
         when()
             .get("/greeting")
             .then()

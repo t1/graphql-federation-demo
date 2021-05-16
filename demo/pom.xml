@@ -14,7 +14,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>film</module>
+        <module>film-war</module>
+        <module>film-quarkus</module>
         <module>review</module>
     </modules>
 

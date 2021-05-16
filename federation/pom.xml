@@ -17,5 +17,6 @@
     <modules>
         <module>api</module>
         <module>runtime</module>
+        <module>quarkus-extension</module>
     </modules>
 </project>

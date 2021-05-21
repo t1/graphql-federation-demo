@@ -2,6 +2,7 @@ package com.github.t1.graphql.federation.impl;
 
 import com.github.t1.graphql.federation.api.External;
 import com.github.t1.graphql.federation.api.FederatedSource;
+import com.github.t1.graphql.federation.api.FederatedTarget;
 import com.github.t1.graphql.federation.api.Key;
 import graphql.TypeResolutionEnvironment;
 import graphql.scalar.GraphqlStringCoercing;
@@ -44,6 +45,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -61,6 +63,7 @@ import static java.util.stream.Collectors.toList;
 public class Federation {
     private static final DotName KEY = DotName.createSimple(Key.class.getName());
     private static final DotName FEDERATED_SOURCE = DotName.createSimple(FederatedSource.class.getName());
+    private static final DotName FEDERATED_TARGET = DotName.createSimple(FederatedTarget.class.getName());
 
     private static final Config PRINTER_CONFIG = new Config() {
     };
@@ -94,7 +97,8 @@ public class Federation {
     private GraphQLObjectType.Builder query;
     private GraphQLCodeRegistry.Builder codeRegistry;
 
-    private final Map<Class<?>, Function<Object, Object>> federatedResolvers = new LinkedHashMap<>();
+    private final Map<Class<?>, SourceResolver> sourceResolvers = new LinkedHashMap<>();
+    private final Map<Class<?>, TargetResolver> targetResolvers = new LinkedHashMap<>();
 
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
         _service = _service(builder.build());
@@ -185,7 +189,15 @@ public class Federation {
     }
 
     private Object resolve(Object source) {
-        return federatedResolvers.get(source.getClass()).apply(source);
+        var sourceResolver = sourceResolvers.get(source.getClass());
+        if (sourceResolver != null)
+            return sourceResolver.apply(source);
+        var targetResolver = targetResolvers.get(source.getClass());
+        if (targetResolver != null) {
+            targetResolver.accept(source);
+            return source;
+        }
+        throw new IllegalStateException("no federated source or target resolver found for " + source.getClass());
     }
 
     /** Create a prefilled instance of the type going into the federated resolver */
@@ -201,10 +213,11 @@ public class Federation {
                 if ("__typename".equals(fieldName)) continue;
                 var value = (String) any.get(fieldName);
                 var field = cls.getDeclaredField(fieldName);
-                if (field.isAnnotationPresent(External.class)) {
-                    field.setAccessible(true);
-                    field.set(instance, value);
-                }
+                if (field.isAnnotationPresent(External.class))
+                    log.fine("non-external field " + fieldName + " on " + typeName);
+
+                field.setAccessible(true);
+                field.set(instance, value);
             }
             return instance;
         } catch (ReflectiveOperationException e) {
@@ -213,13 +226,26 @@ public class Federation {
     }
 
     private void addFederatedResolvers() {
+        addFederatedResolvers(FEDERATED_SOURCE, this::addSourceResolverFor);
+        addFederatedResolvers(FEDERATED_TARGET, this::addTargetResolverFor);
+    }
+
+    private void addFederatedResolvers(DotName annotationName, Consumer<Method> addResolver) {
         ScanningContext.getIndex()
-            .getAnnotations(FEDERATED_SOURCE).stream()
+            .getAnnotations(annotationName).stream()
             .map(AnnotationInstance::target)
             .map(AnnotationTarget::asMethodParameter)
             .map(MethodParameterInfo::method)
             .map(Federation::toReflectionMethod)
-            .forEach(method -> federatedResolvers.put(method.getParameterTypes()[0], new ResolverHandler(method)));
+            .forEach(addResolver);
+    }
+
+    public void addSourceResolverFor(Method method) {
+        sourceResolvers.put(method.getParameterTypes()[0], new SourceResolver(method));
+    }
+
+    public void addTargetResolverFor(Method method) {
+        targetResolvers.put(method.getParameterTypes()[0], new TargetResolver(method));
     }
 
     private static Method toReflectionMethod(MethodInfo methodInfo) {
@@ -245,10 +271,10 @@ public class Federation {
         }
     }
 
-    public static class ResolverHandler implements Function<Object, Object> {
+    public static class SourceResolver implements Function<Object, Object> {
         private final Method method;
 
-        private ResolverHandler(Method method) { this.method = method; }
+        private SourceResolver(Method method) { this.method = method; }
 
         @Override public Object apply(Object source) {
             // TODO C: batch resolvers
@@ -258,9 +284,9 @@ public class Federation {
         }
 
         private Object invoke(Object source) {
-            var reviews = CDI.current().select(method.getDeclaringClass()).get();
+            var resolverInstance = CDI.current().select(method.getDeclaringClass()).get();
             try {
-                return method.invoke(reviews, source);
+                return method.invoke(resolverInstance, source);
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
             }
@@ -273,7 +299,28 @@ public class Federation {
                 field.setAccessible(true);
                 field.set(source, value);
             } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("setting of federated resolver field failed: " + fieldName, e);
+                throw new RuntimeException("setting of federated resolver field failed: "
+                    + source.getClass().getName() + "#" + fieldName, e);
+            }
+        }
+    }
+
+    public static class TargetResolver implements Consumer<Object> {
+        private final Method method;
+
+        private TargetResolver(Method method) { this.method = method; }
+
+        @Override public void accept(Object source) {
+            // TODO C: batch resolvers
+            invoke(source);
+        }
+
+        private void invoke(Object source) {
+            var resolverInstance = CDI.current().select(method.getDeclaringClass()).get();
+            try {
+                method.invoke(resolverInstance, source);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
             }
         }
     }

@@ -7,9 +7,11 @@ import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /**
- * A federated resolver is a method that resolves a batch of data in a federated request.
- * The input type and the output type are both lists of the same type, annotated as {@link Extends @extends},
- * and it adds those fields that are not annotated as {@link External @external}.
+ * A federated resolver method is the federated equivalent to a 'local' resolver method (with a parameter annotated as
+ * <code>{@link org.eclipse.microprofile.graphql.Source @Source}</code>), i.e. it adds a field with the name of the method
+ * and the type of the method return type to the source object.
+ * The class of the source parameter must be annotated as <code>{@link Extends @Extends}</code>
+ * and have at least one field annotated as <code>{@link External @External}</code>.
  */
 @Retention(RUNTIME)
 @Target(PARAMETER)

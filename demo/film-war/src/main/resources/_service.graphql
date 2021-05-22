@@ -1,7 +1,19 @@
 type Film @key(fields: "id") {
+    cast: [Cast!]!
+    director: Artist!
+    directorId: String!
     id: ID!
     title: String
     year: String
+}
+
+type Artist @extends @key(fields : ["id"]) {
+    id: ID! @external
+}
+
+type Cast {
+    artist: Artist!
+    role: String!
 }
 
 "Query root"

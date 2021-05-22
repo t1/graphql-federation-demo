@@ -2,18 +2,20 @@
 <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>com.github.t1</groupId>
-        <artifactId>graphql-federation-quarkus-extension-parent</artifactId>
+        <groupId>com.github.t1.graphql-federation</groupId>
+        <artifactId>quarkus-extension-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>graphql-federation-quarkus-extension-deployment</artifactId>
+    <artifactId>quarkus-extension-deployment</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>graphql-federation-quarkus-extension</artifactId>
+            <groupId>com.github.t1.graphql-federation</groupId>
+            <artifactId>quarkus-extension</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -41,7 +43,9 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>${compiler-plugin.version}</version>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>

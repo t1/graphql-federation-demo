@@ -1,0 +1,1 @@
+{film(id: "1"){title year directorId cast{role artist {id}}}}

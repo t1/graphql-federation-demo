@@ -5,18 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.t1</groupId>
-        <artifactId>graphql-federation-parent</artifactId>
+        <groupId>com.github.t1.graphql-federation</groupId>
+        <artifactId>root</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>graphql-federation-demo</artifactId>
+    <artifactId>demo-parent</artifactId>
     <packaging>pom</packaging>
 
     <modules>
         <module>film-war</module>
         <module>film-quarkus</module>
         <module>review</module>
+        <module>artist</module>
     </modules>
 
     <properties>

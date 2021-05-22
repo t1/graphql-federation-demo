@@ -42,17 +42,17 @@ union _Entity = Film
 
 type Film @extends @key(fields: "id") {
     id: ID! @external
-    reviews: [Review!]!
+    reviews: [Artist!]!
 }
 
 "Query root"
 type Query {
     _entities(representations: [_Any!]!): [_Entity]!
     _service: _Service!
-    reviews(filmId: ID!): [Review!]!
+    reviews(filmId: ID!): [Artist!]!
 }
 
-type Review {
+type Artist {
     comments: [String!]!
     filmId: ID!
     id: ID!

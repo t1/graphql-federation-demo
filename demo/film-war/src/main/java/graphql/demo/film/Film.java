@@ -4,16 +4,19 @@ import com.github.t1.graphql.federation.api.Key;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.Singular;
 import lombok.ToString;
-import lombok.With;
 import org.eclipse.microprofile.graphql.Id;
+import org.eclipse.microprofile.graphql.Ignore;
 import org.eclipse.microprofile.graphql.NonNull;
 
-@Getter @Setter @Builder @With @ToString @NoArgsConstructor @AllArgsConstructor
+import java.util.Map;
+
+@Getter @Builder @ToString @AllArgsConstructor
 public @Key(fields = "id") class Film {
-    @NonNull @Id String id;
-    String title;
-    String year;
+    final @NonNull @Id String id;
+    final @NonNull String title;
+    final @NonNull String year;
+    final @NonNull String directorId;
+    @Ignore final @Singular("cast") Map<String, String> cast;
 }

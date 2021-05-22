@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.t1</groupId>
-    <artifactId>graphql-federation-parent</artifactId>
+    <groupId>com.github.t1.graphql-federation</groupId>
+    <artifactId>root</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>utf-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
-        <smallrye-graphql.version>1.2.1-SNAPSHOT</smallrye-graphql.version>
+        <smallrye-graphql.version>1.2.2-SNAPSHOT</smallrye-graphql.version>
         <microprofile-graphql.version>1.0.4-RC1</microprofile-graphql.version>
     </properties>
 

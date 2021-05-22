@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.t1</groupId>
-        <artifactId>graphql-federation-demo</artifactId>
+        <groupId>com.github.t1.graphql-federation</groupId>
+        <artifactId>demo-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>graphql-federation-demo-film</artifactId>
+    <artifactId>demo-film</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -20,21 +20,15 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>graphql-federation-api</artifactId>
+            <groupId>com.github.t1.graphql-federation</groupId>
+            <artifactId>api</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.t1</groupId>
-            <artifactId>graphql-federation-runtime</artifactId>
+            <groupId>com.github.t1.graphql-federation</groupId>
+            <artifactId>runtime</artifactId>
             <version>${project.version}</version>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>5.7.1</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 

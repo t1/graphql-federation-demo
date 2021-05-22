@@ -11,7 +11,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>demo-review</artifactId>
+    <artifactId>demo-artist</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -33,7 +33,7 @@
     </dependencies>
 
     <build>
-        <finalName>review</finalName>
+        <finalName>artist</finalName>
         <defaultGoal>verify</defaultGoal>
         <plugins>
             <plugin>

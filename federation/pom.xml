@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.t1</groupId>
-        <artifactId>graphql-federation-parent</artifactId>
+        <groupId>com.github.t1.graphql-federation</groupId>
+        <artifactId>root</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>graphql-federation-impl</artifactId>
+    <artifactId>impl</artifactId>
     <packaging>pom</packaging>
 
     <modules>

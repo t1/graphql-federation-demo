@@ -1,5 +1,5 @@
 type Query {
-    artist(id: String!): [Artist!]!
+    artist(id: String!): Artist!
 }
 
 type Artist @key(fields: "id") {

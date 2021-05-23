@@ -1,5 +1,6 @@
 package graphql.demo.film;
 
+import com.github.t1.graphql.federation.api.FederatedSource;
 import lombok.Value;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.NonNull;
@@ -10,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -24,7 +26,10 @@ public class Films {
             .cast("Jack Napier / the Joker", "3")
             .cast("Vicki Vale", "4")
             .build());
-        add(Film.builder().id("2").title("Batman Returns").year("1992").build());
+        add(Film.builder().id("2").title("Batman Returns").year("1992")
+            .directorId("1")
+            .cast("Bruce Wayne / Batman", "2")
+            .build());
         add(Film.builder().id("3").title("Batman: The Animated Series").year("1992").build());
     }
 
@@ -37,6 +42,13 @@ public class Films {
     public @NonNull Film film(@NonNull String id) { return FILMS.get(id); }
 
     public @NonNull Artist director(@Source Film film) { return new Artist(film.directorId); }
+
+    @SuppressWarnings("unused")
+    public @NonNull List<@NonNull Film> films(@FederatedSource Artist artist) {
+        return FILMS.values().stream()
+            .filter(film -> film.cast.containsValue(artist.id) || Objects.equals(film.directorId, artist.id))
+            .collect(toList());
+    }
 
     public @NonNull List<@NonNull Cast> cast(@Source Film film) {
         return film.cast.entrySet().stream()

@@ -96,8 +96,8 @@ public class Federation {
     private GraphQLObjectType.Builder query;
     private GraphQLCodeRegistry.Builder codeRegistry;
 
-    private final Map<Class<?>, FederatedResolver> federatedResolvers = new LinkedHashMap<>();
-    private final Map<Class<?>, MainResolver> mainResolvers = new LinkedHashMap<>();
+    private final Map<Class<?>, FederatedEntityResolver> federatedEntityResolvers = new LinkedHashMap<>();
+    private final Map<Class<?>, MainEntityResolver> mainEntityResolvers = new LinkedHashMap<>();
 
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
         _service = _service(builder.build());
@@ -111,7 +111,7 @@ public class Federation {
         addUnions(builder);
         addQueries();
         addCode();
-        addResolvers();
+        addEntityResolvers();
 
         builder.query(query);
         builder.codeRegistry(codeRegistry.build());
@@ -188,13 +188,13 @@ public class Federation {
 
     private Object resolve(Map<String, Object> representation) {
         var type = type(representation);
-        var federatedResolver = federatedResolvers.get(type);
-        if (federatedResolver != null)
-            return federatedResolver.apply(representation);
-        var mainResolver = mainResolvers.get(type);
-        if (mainResolver != null)
-            return mainResolver.apply(representation);
-        throw new IllegalStateException("No federated or main resolver found for " + type + ". " +
+        var federatedEntityResolver = federatedEntityResolvers.get(type);
+        if (federatedEntityResolver != null)
+            return federatedEntityResolver.apply(representation);
+        var mainEntityResolver = mainEntityResolvers.get(type);
+        if (mainEntityResolver != null)
+            return mainEntityResolver.apply(representation);
+        throw new IllegalStateException("No federated or main entity resolver found for " + type + ". " +
             "Add a @Query with the @Key fields as parameters.");
     }
 
@@ -209,29 +209,29 @@ public class Federation {
         }
     }
 
-    private void addResolvers() {
-        addMainResolvers();
-        addFederatedResolvers();
+    private void addEntityResolvers() {
+        addMainEntityResolvers();
+        addFederatedEntityResolvers();
     }
 
-    private void addMainResolvers() {
+    private void addMainEntityResolvers() {
         this.schema.getQueries().stream()
-            .filter(this::isMainResolver)
-            .map(MainResolver::new)
+            .filter(this::isMainEntityResolver)
+            .map(MainEntityResolver::new)
             .distinct()
-            .forEach(mainResolver -> {
-                log.fine("add main resolver method " + mainResolver.method);
-                mainResolvers.put(mainResolver.getType(), mainResolver);
+            .forEach(mainEntityResolver -> {
+                log.fine("add main entity resolver method " + mainEntityResolver.method);
+                mainEntityResolvers.put(mainEntityResolver.getType(), mainEntityResolver);
             });
     }
 
-    private boolean isMainResolver(Operation operation) {
+    private boolean isMainEntityResolver(Operation operation) {
         // TODO C: check type NOT @extends
         // TODO B: check (non-optional) method params match @id
         return operation.hasArguments();
     }
 
-    private void addFederatedResolvers() {
+    private void addFederatedEntityResolvers() {
         ScanningContext.getIndex()
             .getAnnotations(FEDERATED_SOURCE).stream()
             .map(AnnotationInstance::target)
@@ -240,9 +240,9 @@ public class Federation {
             .map(Federation::toReflectionMethod)
             .distinct()
             .forEach(method -> {
-                log.fine("add federated resolver method " + method);
+                log.fine("add federated entity resolver method " + method);
                 // TODO C: check that the target type IS @extends
-                federatedResolvers.put(method.getParameterTypes()[0], new FederatedResolver(schema, method));
+                federatedEntityResolvers.put(method.getParameterTypes()[0], new FederatedEntityResolver(schema, method));
             });
     }
 
@@ -271,11 +271,11 @@ public class Federation {
 
     /** A federated query for a type that non-extends type by using its key fields */
     @EqualsAndHashCode(of = "method")
-    public static class MainResolver implements Function<Map<String, Object>, Object> {
+    public static class MainEntityResolver implements Function<Map<String, Object>, Object> {
         private final Operation operation;
         private final Method method;
 
-        private MainResolver(Operation operation) {
+        private MainEntityResolver(Operation operation) {
             this.operation = operation;
             this.method = toMethod(operation);
         }
@@ -287,16 +287,16 @@ public class Federation {
         }
 
         @Override public Object apply(Map<String, Object> representation) {
-            var resolverInstance = CDI.current().select(method.getDeclaringClass()).get();
+            var declaringBean = CDI.current().select(method.getDeclaringClass()).get();
             var args = new Object[method.getParameterCount()];
             for (int i = 0; i < method.getParameterCount(); i++) {
                 var argument = operation.getArguments().get(i);
                 args[i] = representation.get(argument.getName());
             }
             try {
-                return method.invoke(resolverInstance, args);
+                return method.invoke(declaringBean, args);
             } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
+                throw new RuntimeException("invocation of federated entity resolver method failed: " + method, e);
             }
         }
 
@@ -304,24 +304,24 @@ public class Federation {
     }
 
     /** A method annotated as {@link FederatedSource} */
-    public static class FederatedResolver implements Function<Map<String, Object>, Object> {
+    public static class FederatedEntityResolver implements Function<Map<String, Object>, Object> {
         private final Schema schema;
         private final Method method;
 
-        private FederatedResolver(Schema schema, Method method) {
+        private FederatedEntityResolver(Schema schema, Method method) {
             this.schema = schema;
             this.method = method;
         }
 
         @Override public Object apply(Map<String, Object> representation) {
-            // TODO C: batch resolvers
+            // TODO C: batch entity resolvers
             var source = instantiate(representation);
             Object value = invoke(source);
             set(source, value);
             return source;
         }
 
-        /** Create a prefilled instance of the type going into the federated resolver */
+        /** Create a prefilled instance of the type going into the federated entity resolver */
         private Object instantiate(Map<String, Object> representation) {
             var typeName = (String) representation.get("__typename");
             try {
@@ -347,11 +347,11 @@ public class Federation {
         }
 
         private Object invoke(Object source) {
-            var resolverInstance = CDI.current().select(method.getDeclaringClass()).get();
+            var declaringBean = CDI.current().select(method.getDeclaringClass()).get();
             try {
-                return method.invoke(resolverInstance, source);
+                return method.invoke(declaringBean, source);
             } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
+                throw new RuntimeException("invocation of federated entity resolver method failed: " + method, e);
             }
         }
 
@@ -362,7 +362,7 @@ public class Federation {
                 field.setAccessible(true);
                 field.set(source, value);
             } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("setting of federated resolver field failed: "
+                throw new RuntimeException("setting of federated entity resolver field failed: "
                     + source.getClass().getName() + "#" + fieldName, e);
             }
         }

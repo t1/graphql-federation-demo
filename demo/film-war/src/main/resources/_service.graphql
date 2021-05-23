@@ -7,8 +7,9 @@ type Film @key(fields: "id") {
     year: String
 }
 
-type Artist @extends @key(fields : ["id"]) {
+type Artist @extends @key(fields : "id") {
     id: ID! @external
+    films: [Film!]!
 }
 
 type Cast {

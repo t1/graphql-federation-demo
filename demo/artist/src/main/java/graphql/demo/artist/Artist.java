@@ -1,4 +1,4 @@
-package graphql.demo.review;
+package graphql.demo.artist;
 
 import com.github.t1.graphql.federation.api.Key;
 import lombok.AllArgsConstructor;

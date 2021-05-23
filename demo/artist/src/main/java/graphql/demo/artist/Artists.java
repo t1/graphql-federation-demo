@@ -1,6 +1,5 @@
-package graphql.demo.review;
+package graphql.demo.artist;
 
-import com.github.t1.graphql.federation.api.FederatedTarget;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.NonNull;
@@ -25,11 +24,6 @@ public class Artists {
     @Query public @NonNull Artist getArtist(@NonNull @Id String id) {
         if (!ARTISTS.containsKey(id)) throw new ArtistNotFoundException(id);
         return ARTISTS.get(id);
-    }
-
-    public void resolve(@FederatedTarget Artist artist) {
-        var resolved = getArtist(artist.id);
-        artist.setName(resolved.name);
     }
 
     private static class ArtistNotFoundException extends RuntimeException {

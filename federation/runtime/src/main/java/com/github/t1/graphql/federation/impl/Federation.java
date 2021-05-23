@@ -2,7 +2,6 @@ package com.github.t1.graphql.federation.impl;
 
 import com.github.t1.graphql.federation.api.External;
 import com.github.t1.graphql.federation.api.FederatedSource;
-import com.github.t1.graphql.federation.api.FederatedTarget;
 import com.github.t1.graphql.federation.api.Key;
 import graphql.TypeResolutionEnvironment;
 import graphql.scalar.GraphqlStringCoercing;
@@ -22,7 +21,9 @@ import graphql.schema.GraphQLUnionType;
 import io.smallrye.graphql.bootstrap.Config;
 import io.smallrye.graphql.execution.SchemaPrinter;
 import io.smallrye.graphql.schema.ScanningContext;
+import io.smallrye.graphql.schema.model.Operation;
 import io.smallrye.graphql.schema.model.Schema;
+import lombok.EqualsAndHashCode;
 import lombok.extern.java.Log;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.NonNull;
@@ -45,7 +46,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -63,7 +63,6 @@ import static java.util.stream.Collectors.toList;
 public class Federation {
     private static final DotName KEY = DotName.createSimple(Key.class.getName());
     private static final DotName FEDERATED_SOURCE = DotName.createSimple(FederatedSource.class.getName());
-    private static final DotName FEDERATED_TARGET = DotName.createSimple(FederatedTarget.class.getName());
 
     private static final Config PRINTER_CONFIG = new Config() {
     };
@@ -97,8 +96,8 @@ public class Federation {
     private GraphQLObjectType.Builder query;
     private GraphQLCodeRegistry.Builder codeRegistry;
 
-    private final Map<Class<?>, SourceResolver> sourceResolvers = new LinkedHashMap<>();
-    private final Map<Class<?>, TargetResolver> targetResolvers = new LinkedHashMap<>();
+    private final Map<Class<?>, FederatedResolver> federatedResolvers = new LinkedHashMap<>();
+    private final Map<Class<?>, MainResolver> mainResolvers = new LinkedHashMap<>();
 
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
         _service = _service(builder.build());
@@ -112,7 +111,7 @@ public class Federation {
         addUnions(builder);
         addQueries();
         addCode();
-        addFederatedResolvers();
+        addResolvers();
 
         builder.query(query);
         builder.codeRegistry(codeRegistry.build());
@@ -137,8 +136,8 @@ public class Federation {
     }
 
     private void addUnions(Builder builder) {
-        var index = ScanningContext.getIndex();
-        var typesWithKey = index.getAnnotations(KEY).stream()
+        var typesWithKey = ScanningContext.getIndex()
+            .getAnnotations(KEY).stream()
             .map(AnnotationInstance::target)
             .map(AnnotationTarget::asClass)
             .map(typeInfo -> toObjectType(typeInfo, builder))
@@ -183,69 +182,68 @@ public class Federation {
         @SuppressWarnings("unchecked")
         var representations = (List<Map<String, Object>>) environment.getArgument("representations");
         return representations.stream()
-            .map(this::toRepresentationInstance)
             .map(this::resolve)
             .collect(toList());
     }
 
-    private Object resolve(Object source) {
-        var sourceResolver = sourceResolvers.get(source.getClass());
-        if (sourceResolver != null)
-            return sourceResolver.apply(source);
-        var targetResolver = targetResolvers.get(source.getClass());
-        if (targetResolver != null) {
-            targetResolver.accept(source);
-            return source;
-        }
-        throw new IllegalStateException("no federated source or target resolver found for " + source.getClass());
+    private Object resolve(Map<String, Object> representation) {
+        var type = type(representation);
+        var federatedResolver = federatedResolvers.get(type);
+        if (federatedResolver != null)
+            return federatedResolver.apply(representation);
+        var mainResolver = mainResolvers.get(type);
+        if (mainResolver != null)
+            return mainResolver.apply(representation);
+        throw new IllegalStateException("No federated or main resolver found for " + type + ". " +
+            "Add a @Query with the @Key fields as parameters.");
     }
 
-    /** Create a prefilled instance of the type going into the federated resolver */
-    private Object toRepresentationInstance(Map<String, Object> any) {
-        var typeName = (String) any.get("__typename");
+    private Class<?> type(Map<String, Object> representation) {
+        var typeName = (String) representation.get("__typename");
         try {
             var type = schema.getTypes().get(typeName);
             if (type == null) throw new IllegalStateException("no class registered in schema for " + typeName);
-            var cls = Class.forName(type.getClassName());
-            Object instance = cls.getConstructor().newInstance();
-            // TODO B: field renames
-            for (String fieldName : type.getFields().keySet()) {
-                if ("__typename".equals(fieldName)) continue;
-                var value = (String) any.get(fieldName);
-                var field = cls.getDeclaredField(fieldName);
-                if (field.isAnnotationPresent(External.class))
-                    log.fine("non-external field " + fieldName + " on " + typeName);
-
-                field.setAccessible(true);
-                field.set(instance, value);
-            }
-            return instance;
+            return Class.forName(type.getClassName());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException("can't create extended type instance " + typeName, e);
         }
     }
 
-    private void addFederatedResolvers() {
-        addFederatedResolvers(FEDERATED_SOURCE, this::addSourceResolverFor);
-        addFederatedResolvers(FEDERATED_TARGET, this::addTargetResolverFor);
+    private void addResolvers() {
+        addMainResolvers();
+        addFederatedResolvers();
     }
 
-    private void addFederatedResolvers(DotName annotationName, Consumer<Method> addResolver) {
+    private void addMainResolvers() {
+        this.schema.getQueries().stream()
+            .filter(this::isMainResolver)
+            .map(MainResolver::new)
+            .distinct()
+            .forEach(mainResolver -> {
+                log.fine("add main resolver method " + mainResolver.method);
+                mainResolvers.put(mainResolver.getType(), mainResolver);
+            });
+    }
+
+    private boolean isMainResolver(Operation operation) {
+        // TODO C: check type NOT @extends
+        // TODO B: check (non-optional) method params match @id
+        return operation.hasArguments();
+    }
+
+    private void addFederatedResolvers() {
         ScanningContext.getIndex()
-            .getAnnotations(annotationName).stream()
+            .getAnnotations(FEDERATED_SOURCE).stream()
             .map(AnnotationInstance::target)
             .map(AnnotationTarget::asMethodParameter)
             .map(MethodParameterInfo::method)
             .map(Federation::toReflectionMethod)
-            .forEach(addResolver);
-    }
-
-    public void addSourceResolverFor(Method method) {
-        sourceResolvers.put(method.getParameterTypes()[0], new SourceResolver(method));
-    }
-
-    public void addTargetResolverFor(Method method) {
-        targetResolvers.put(method.getParameterTypes()[0], new TargetResolver(method));
+            .distinct()
+            .forEach(method -> {
+                log.fine("add federated resolver method " + method);
+                // TODO C: check that the target type IS @extends
+                federatedResolvers.put(method.getParameterTypes()[0], new FederatedResolver(schema, method));
+            });
     }
 
     private static Method toReflectionMethod(MethodInfo methodInfo) {
@@ -271,16 +269,81 @@ public class Federation {
         }
     }
 
-    public static class SourceResolver implements Function<Object, Object> {
+    /** A federated query for a type that non-extends type by using its key fields */
+    @EqualsAndHashCode(of = "method")
+    public static class MainResolver implements Function<Map<String, Object>, Object> {
+        private final Operation operation;
         private final Method method;
 
-        private SourceResolver(Method method) { this.method = method; }
+        private MainResolver(Operation operation) {
+            this.operation = operation;
+            this.method = toMethod(operation);
+        }
 
-        @Override public Object apply(Object source) {
+        private static Method toMethod(Operation operation) {
+            return toReflectionMethod(ScanningContext.getIndex()
+                .getClassByName(DotName.createSimple(operation.getClassName()))
+                .firstMethod(operation.getMethodName()));
+        }
+
+        @Override public Object apply(Map<String, Object> representation) {
+            var resolverInstance = CDI.current().select(method.getDeclaringClass()).get();
+            var args = new Object[method.getParameterCount()];
+            for (int i = 0; i < method.getParameterCount(); i++) {
+                var argument = operation.getArguments().get(i);
+                args[i] = representation.get(argument.getName());
+            }
+            try {
+                return method.invoke(resolverInstance, args);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
+            }
+        }
+
+        public Class<?> getType() { return method.getReturnType(); }
+    }
+
+    /** A method annotated as {@link FederatedSource} */
+    public static class FederatedResolver implements Function<Map<String, Object>, Object> {
+        private final Schema schema;
+        private final Method method;
+
+        private FederatedResolver(Schema schema, Method method) {
+            this.schema = schema;
+            this.method = method;
+        }
+
+        @Override public Object apply(Map<String, Object> representation) {
             // TODO C: batch resolvers
+            var source = instantiate(representation);
             Object value = invoke(source);
             set(source, value);
             return source;
+        }
+
+        /** Create a prefilled instance of the type going into the federated resolver */
+        private Object instantiate(Map<String, Object> representation) {
+            var typeName = (String) representation.get("__typename");
+            try {
+                var type = schema.getTypes().get(typeName);
+                if (type == null) throw new IllegalStateException("no class registered in schema for " + typeName);
+                var cls = Class.forName(type.getClassName());
+                Object instance = cls.getConstructor().newInstance();
+                // TODO B: field renames
+                for (String fieldName : type.getFields().keySet()) {
+                    if ("__typename".equals(fieldName)) continue;
+                    var value = (String) representation.get(fieldName);
+                    var field = cls.getDeclaredField(fieldName);
+                    if (field.isAnnotationPresent(External.class))
+                        log.fine("non-external field " + fieldName + " on " + typeName);
+
+                    field.setAccessible(true);
+                    field.set(instance, value);
+                }
+                return instance;
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("can't create extended type instance " + typeName, e);
+            }
         }
 
         private Object invoke(Object source) {
@@ -301,26 +364,6 @@ public class Federation {
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException("setting of federated resolver field failed: "
                     + source.getClass().getName() + "#" + fieldName, e);
-            }
-        }
-    }
-
-    public static class TargetResolver implements Consumer<Object> {
-        private final Method method;
-
-        private TargetResolver(Method method) { this.method = method; }
-
-        @Override public void accept(Object source) {
-            // TODO C: batch resolvers
-            invoke(source);
-        }
-
-        private void invoke(Object source) {
-            var resolverInstance = CDI.current().select(method.getDeclaringClass()).get();
-            try {
-                method.invoke(resolverInstance, source);
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException("invocation of federated resolver method failed: " + method, e);
             }
         }
     }

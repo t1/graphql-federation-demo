@@ -23,10 +23,6 @@
 
     <properties>
         <failOnMissingWebXml>false</failOnMissingWebXml>
-
-        <quarkus.version>1.13.4.Final</quarkus.version>
-        <compiler-plugin.version>3.8.1</compiler-plugin.version>
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     </properties>
 
     <dependencies>

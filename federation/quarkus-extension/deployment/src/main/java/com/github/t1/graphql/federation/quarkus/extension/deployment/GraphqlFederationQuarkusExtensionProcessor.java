@@ -1,13 +1,17 @@
 package com.github.t1.graphql.federation.quarkus.extension.deployment;
 
+import com.github.t1.graphql.federation.quarkus.extension.EntitiesRecorder;
 import io.quarkus.deployment.annotations.BuildStep;
+import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.ApplicationIndexBuildItem;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
-import io.quarkus.undertow.deployment.ServletBuildItem;
-import org.acme.greeting.extension.GreetingExtensionServlet;
+import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
+import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.DotName;
 import org.jboss.logging.Logger;
+
+import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
 
 class GraphqlFederationQuarkusExtensionProcessor {
     private static final Logger LOG = Logger.getLogger(GraphqlFederationQuarkusExtensionProcessor.class.getName());
@@ -16,32 +20,30 @@ class GraphqlFederationQuarkusExtensionProcessor {
     private static final DotName KEY = DotName.createSimple("com.github.t1.graphql.federation.api.Key");
 
     @BuildStep
-    FeatureBuildItem feature() {
-        return new FeatureBuildItem(FEATURE);
-    }
+    FeatureBuildItem feature() { return new FeatureBuildItem(FEATURE); }
 
     @BuildStep
-    void findKeyDirectives(ApplicationIndexBuildItem index) {
-        LOG.debug("scanning for @Key annotations");
+    EntitiesBuildItem findKeyDirectives(ApplicationIndexBuildItem index) {
+        var entities = new EntitiesBuildItem();
         for (AnnotationInstance keyAnnotation : index.getIndex().getAnnotations(KEY)) {
             var annotationTarget = keyAnnotation.target().asClass();
-            LOG.debug("found " + keyAnnotation + " annotation on " + annotationTarget);
+            LOG.info("found " + keyAnnotation + " on " + annotationTarget);
+            entities.add(annotationTarget.name().toString());
         }
+        return entities;
     }
 
-    // @BuildStep
-    // RouteBuildItem myExtensionRoute(NonApplicationRootPathBuildItem nonApp) {
-    //     return nonApp.routeBuilder()
-    //         .route("custom-endpoint")
-    //         .handler(new MyCustomHandler())
-    //         .displayOnNotFoundPage()
-    //         .build();
-    // }
-
     @BuildStep
-    ServletBuildItem createServlet() {
-        return ServletBuildItem.builder("greeting-extension", GreetingExtensionServlet.class.getName())
-            .addMapping("/greeting")
+    @Record(RUNTIME_INIT)
+    RouteBuildItem devModeRoute(
+        NonApplicationRootPathBuildItem nonApp,
+        EntitiesBuildItem entitiesBuildItem,
+        EntitiesRecorder entitiesRecorder
+    ) {
+        return nonApp.routeBuilder()
+            .route("graphql-federation")
+            .handler(entitiesRecorder.createHandler(entitiesBuildItem.getEntities()))
+            .displayOnNotFoundPage()
             .build();
     }
 }

@@ -21,9 +21,9 @@ public class GraphqlFederationQuarkusExtensionDevModeTest {
     @Test
     public void shouldReturnExtensionGreeting() {
         when()
-            .get("/greeting")
+            .get("/q/graphql-federation")
             .then()
             .statusCode(200)
-            .body(containsString("Hello"));
+            .body(containsString("entities:"));
     }
 }

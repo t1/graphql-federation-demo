@@ -16,11 +16,11 @@ public class GraphqlFederationQuarkusExtensionTest {
         .setArchiveProducer(() -> ShrinkWrap.create(JavaArchive.class));
 
     @Test
-    public void shouldReturnExtensionGreeting() {
+    public void shouldReturnDev() {
         when()
-            .get("/greeting")
+            .get("/q/graphql-federation")
             .then()
             .statusCode(200)
-            .body(containsString("Hello"));
+            .body(containsString("entities:"));
     }
 }

@@ -17,11 +17,16 @@
         <module>film-war</module>
         <module>film-quarkus</module>
         <module>review</module>
-        <module>artist</module>
+        <module>artist-war</module>
+        <module>artist-quarkus</module>
     </modules>
 
     <properties>
         <failOnMissingWebXml>false</failOnMissingWebXml>
+
+        <quarkus.version>1.13.4.Final</quarkus.version>
+        <compiler-plugin.version>3.8.1</compiler-plugin.version>
+        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
     </properties>
 
     <dependencies>

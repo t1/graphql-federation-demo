@@ -28,23 +28,24 @@
     <profiles>
         <profile>
             <id>fat</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
             <dependencies>
                 <dependency>
                     <groupId>org.eclipse.microprofile.graphql</groupId>
                     <artifactId>microprofile-graphql-api</artifactId>
-                    <version>${microprofile-graphql.version}</version>
                     <!-- not provided -->
                 </dependency>
                 <dependency>
                     <groupId>io.smallrye</groupId>
                     <artifactId>smallrye-graphql-servlet</artifactId>
-                    <version>${smallrye-graphql.version}</version>
                     <!-- not provided -->
                 </dependency>
                 <dependency>
                     <groupId>io.smallrye</groupId>
                     <artifactId>smallrye-context-propagation</artifactId>
-                    <version>1.2.0</version>
+                    <!-- not provided -->
                 </dependency>
             </dependencies>
         </profile>

@@ -1,9 +1,0 @@
-type Artist @key(fields: "id") {
-id: ID!
-name: String!
-}
-
-"Query root"
-type Query {
-    artist(id: ID!): Artist!
-}

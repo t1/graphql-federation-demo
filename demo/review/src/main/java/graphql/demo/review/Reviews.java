@@ -29,7 +29,4 @@ public class Reviews {
     public @NonNull List<@NonNull Review> reviews(@FederatedSource Film film) { return getReviews(film.getId()); }
 
     @Query public @NonNull List<@NonNull Review> getReviews(@NonNull @Id String filmId) { return reviewsFor(filmId); }
-
-    // TODO A: register extended type dynamically
-    @Query public Film dummyFilm() { return null; }
 }

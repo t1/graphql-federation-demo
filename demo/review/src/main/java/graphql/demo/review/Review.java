@@ -1,5 +1,6 @@
 package graphql.demo.review;
 
+import com.github.t1.graphql.federation.api.Key;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -14,7 +15,7 @@ import java.util.List;
 
 @Getter @Setter @ToString @NoArgsConstructor
 @Builder @AllArgsConstructor
-public class Review {
+public @Key(fields = "id") class Review {
     @NonNull @Id String id;
     @NonNull @Id String filmId;
     @NonNull String score;

@@ -16,7 +16,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLSchema.Builder;
 import graphql.schema.GraphQLUnionType;
 import io.smallrye.graphql.bootstrap.Config;
 import io.smallrye.graphql.execution.SchemaPrinter;
@@ -65,6 +64,8 @@ public class Federation {
 
     private static final Config PRINTER_CONFIG = new Config() {
         @Override public boolean isIncludeDirectivesInSchema() { return true; }
+
+        @Override public boolean isIncludeScalarsInSchema() { return true; }
     };
 
     private static final GraphQLScalarType _FieldSet = GraphQLScalarType.newScalar().name("_FieldSet")
@@ -88,6 +89,7 @@ public class Federation {
     }
 
 
+    @SuppressWarnings("CdiInjectionPointsInspection")
     @Inject Schema schema;
 
     private GraphQLUnionType _Entity;
@@ -105,12 +107,13 @@ public class Federation {
     private final Map<Class<?>, MainEntityResolver> mainEntityResolvers = new LinkedHashMap<>();
 
     public GraphQLSchema.Builder beforeSchemaBuild(@Observes GraphQLSchema.Builder builder) {
-        this.rawServiceSchema = rawServiceSchema(builder.build());
+        var original = builder.build();
+        this.rawServiceSchema = rawServiceSchema(original);
 
         // TODO C: make the query builder available from SmallRye
-        this.query = GraphQLObjectType.newObject(builder.build().getQueryType());
+        this.query = GraphQLObjectType.newObject(original.getQueryType());
         // TODO C: make the GraphQLCodeRegistry available from SmallRye
-        this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(builder.build().getCodeRegistry());
+        this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(original.getCodeRegistry());
 
         addScalars(builder);
         addUnions(builder);
@@ -153,30 +156,31 @@ public class Federation {
             .replaceAll("@key\\(fields ?: ?\\[([^,\\]]*)]\\)", "@key(fields: $1)");
     }
 
-    private void addScalars(Builder builder) {
+    private void addScalars(GraphQLSchema.Builder builder) {
         builder.additionalType(_Any);
         builder.additionalType(_FieldSet);
     }
 
-    private void addUnions(Builder builder) {
-        var typesWithKey = ScanningContext.getIndex()
+    private void addUnions(GraphQLSchema.Builder builder) {
+        var graphQLSchema = builder.build();
+        var entityUnionTypes = ScanningContext.getIndex()
             .getAnnotations(KEY).stream()
             .map(AnnotationInstance::target)
             .map(AnnotationTarget::asClass)
-            .map(typeInfo -> toObjectType(typeInfo, builder))
+            .map(typeInfo -> toObjectType(typeInfo, graphQLSchema))
             .toArray(GraphQLObjectType[]::new);
-        if (typesWithKey.length == 0) return;
+        if (entityUnionTypes.length == 0) return;
         // union _Entity = ...
         _Entity = GraphQLUnionType.newUnionType().name("_Entity")
-            .possibleTypes(typesWithKey)
+            .possibleTypes(entityUnionTypes)
             .description("This is a union of all types that use the @key directive, " +
                 "including both types native to the schema and extended types.").build();
         builder.additionalType(_Entity);
     }
 
-    private GraphQLObjectType toObjectType(ClassInfo typeInfo, Builder builder) {
+    private GraphQLObjectType toObjectType(ClassInfo typeInfo, GraphQLSchema graphQLSchema) {
         var typeName = typeInfo.name().local();
-        var objectType = builder.build().getObjectType(typeName);
+        var objectType = graphQLSchema.getObjectType(typeName);
         if (objectType == null) throw new IllegalStateException("no class registered in schema for " + typeName);
         return objectType;
     }

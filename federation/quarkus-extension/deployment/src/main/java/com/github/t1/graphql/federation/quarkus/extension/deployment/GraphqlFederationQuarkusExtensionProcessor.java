@@ -14,9 +14,8 @@ import org.jboss.logging.Logger;
 import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
 
 class GraphqlFederationQuarkusExtensionProcessor {
-    private static final Logger LOG = Logger.getLogger(GraphqlFederationQuarkusExtensionProcessor.class.getName());
     private static final String FEATURE = "graphql-federation";
-
+    private static final Logger LOG = Logger.getLogger(GraphqlFederationQuarkusExtensionProcessor.class.getName());
     private static final DotName KEY = DotName.createSimple("com.github.t1.graphql.federation.api.Key");
 
     @BuildStep
@@ -41,7 +40,7 @@ class GraphqlFederationQuarkusExtensionProcessor {
         EntitiesRecorder entitiesRecorder
     ) {
         return nonApp.routeBuilder()
-            .route("graphql-federation")
+            .route(FEATURE)
             .handler(entitiesRecorder.createHandler(entitiesBuildItem.getEntities()))
             .displayOnNotFoundPage()
             .build();

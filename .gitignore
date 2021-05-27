@@ -1,5 +1,6 @@
 /.idea/
 *.iml
 
+/.links
 target/
 node_modules/

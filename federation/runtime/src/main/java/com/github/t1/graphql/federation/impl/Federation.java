@@ -116,9 +116,9 @@ public class Federation {
         this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(original.getCodeRegistry());
 
         addScalars(builder);
+        addEntityResolvers();
         addUnions(builder);
         addQueries();
-        addEntityResolvers();
         addCode();
 
         builder.query(query);
@@ -126,7 +126,7 @@ public class Federation {
         return builder;
     }
 
-    /** The SDL without the federation extras */
+    /** The SDL without the federation extras (but with the directives) */
     private String rawServiceSchema(GraphQLSchema original) {
         try (var stream = getClass().getResourceAsStream("/_service.graphql")) {
             if (stream != null)

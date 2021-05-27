@@ -20,21 +20,20 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.t1.graphql-federation</groupId>
-            <artifactId>api</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-graphql-federation-api</artifactId>
+            <version>${smallrye-graphql.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.t1.graphql-federation</groupId>
-            <artifactId>runtime</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-graphql-federation-runtime</artifactId>
+            <version>${smallrye-graphql.version}</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
 
     <build>
         <finalName>review</finalName>
-        <defaultGoal>verify</defaultGoal>
         <plugins>
             <plugin>
                 <groupId>io.smallrye</groupId>

@@ -26,9 +26,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.t1.graphql-federation</groupId>
-            <artifactId>api</artifactId>
-            <version>${project.version}</version>
+            <groupId>io.smallrye</groupId>
+            <artifactId>smallrye-graphql-federation-api</artifactId>
+            <version>${smallrye-graphql.version}</version>
         </dependency>
         <dependency>
             <groupId>com.github.t1.graphql-federation</groupId>

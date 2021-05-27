@@ -1,6 +1,6 @@
 package graphql.demo.review;
 
-import com.github.t1.graphql.federation.api.FederatedSource;
+import io.smallrye.graphql.federation.api.FederatedSource;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Id;
 import org.eclipse.microprofile.graphql.NonNull;

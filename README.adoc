@@ -1,6 +1,8 @@
 === What's This?
 
-Experimental extension library to add https://www.apollographql.com/docs/federation/federation-spec/[GraphQL Federation] to https://github.com/smallrye/smallrye-graphql[SmallRye GraphQL].
+Demo for the https://github.com/smallrye/smallrye-graphql[SmallRye GraphQL] extension library to add https://www.apollographql.com/docs/federation/federation-spec/[GraphQL Federation].
+
+There's also an experiment for a Quarkus extension.
 
 === Howto Run The Demo
 

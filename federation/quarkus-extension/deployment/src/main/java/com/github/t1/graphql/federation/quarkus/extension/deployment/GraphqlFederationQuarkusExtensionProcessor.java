@@ -16,7 +16,7 @@ import static io.quarkus.deployment.annotations.ExecutionTime.RUNTIME_INIT;
 class GraphqlFederationQuarkusExtensionProcessor {
     private static final String FEATURE = "graphql-federation";
     private static final Logger LOG = Logger.getLogger(GraphqlFederationQuarkusExtensionProcessor.class.getName());
-    private static final DotName KEY = DotName.createSimple("com.github.t1.graphql.federation.api.Key");
+    private static final DotName KEY = DotName.createSimple("io.smallrye.graphql.federation.api.Key");
 
     @BuildStep
     FeatureBuildItem feature() { return new FeatureBuildItem(FEATURE); }

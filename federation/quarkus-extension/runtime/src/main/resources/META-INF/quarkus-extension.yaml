@@ -1,5 +1,6 @@
 name: GraphQL Federation Quarkus Extension
 description: Allows your GraphQL application to take part in GraphQL Federation by annotating your types with, e.g., `@Key`.
+artifact: ${project.groupId}:${project.artifactId}:${project.version}
 metadata:
   status: "preview"
   keywords:

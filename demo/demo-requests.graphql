@@ -1,0 +1,3 @@
+{films{id title year}}
+
+{artist(id: "1"){id name}}
